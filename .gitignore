@@ -1,0 +1,111 @@
+# --- ОС и редакторы ---
+.DS_Store
+Thumbs.db
+.directory
+*~
+*.swp
+*.swo
+
+# --- IDE ---
+.idea/
+*.iml
+.vscode/
+!/.vscode/extensions.json
+!/.vscode/settings.json
+
+# --- Node.js ---
+node_modules/
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# --- Сборка и статика ---
+/dist/
+/build/
+/out/
+.next/
+.nuxt/
+public/
+# Если у тебя Vite:
+/dist-ssr/
+
+# --- Тесты и покрытие ---
+coverage/
+.nyc_output/
+
+# --- Логи и временные файлы ---
+logs/
+*.log
+tmp/
+temp/
+
+# --- Git-история и артефакты ---
+.git/
+
+# временные файлы переводов
+locales/*.tmp
+locales/*.bak
+locales/cache/
+
+# ==========================================
+# Anti-Procrastinator-website: NEXT.JS & TYPESCRIPT
+# ==========================================
+
+# Зависимости
+node_modules/
+dist-ssr/
+.pnp
+.pnp.js
+
+# Next.js специфика
+.next/
+out/
+build/
+dist/
+
+# Переменные окружения (КРИТИЧНО)
+# --- Локальные конфиги и секреты ---
+.env
+.env*.local
+!.env.example
+.env.local
+!/.env.example
+
+# Dockerfile нужен для CI
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Тестирование и покрытие
+coverage/
+.nyc_output/
+
+# Vercel
+.vercel
+
+# ==========================================
+# Anti-Procrastinator-website: СТРАТЕГИЯ И БЕЗОПАСНОСТЬ
+# ==========================================
+
+# Скрываем продуктовую ДНК (если репо станет публичным)
+DECISION*.md
+AGENT-RULES.md
+SKILL-*.md
+README-grill_me*.*
+D-RECOVERY.md
+ARCHITECT_D_DECISIONS.md
+CROSS_REFERENCE_D_VS_STRATEGIC.md
+PRODUCT_DECISION_LOG_FULL.md
+
+
+# Личные папки
+.info_my/
+.info-my/
+LESSONS_LEARNED.yaml
+_quarantine/
