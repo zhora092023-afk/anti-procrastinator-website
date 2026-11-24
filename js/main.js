@@ -1,66 +1,105 @@
-
-/* CutTails demo widget + quiz + i18n glue */
+/* Anti-Procrastinator — interactions */
 const CONFIG = {
-  // Вставьте сюда URL веб-версии CutTails (PWA/демо-страницу)
-  demoUrl: "",
-  // Страница описания приложения (кнопка внутри виджета)
-  appUrl: ""
+  // Вставьте сюда URL вашей PWA (CutTails), например:
+  // demoUrl: 'https://app.anti-procrastinator.com'
+  demoUrl: ''
 };
 
-/* --- i18n: тексты уже зашиты в HTML каждой языковой версии, JSON нужен для динамических блоков --- */
-const LANG = document.documentElement.lang || "en";
-let T = {};
-fetch(document.baseURI + "../../locales/" + LANG + ".json").catch(()=>fetch("../locales/"+LANG+".json"))
-  .then(r=>r.json()).then(d=>{ T=d; initQuiz(); });
+document.addEventListener('DOMContentLoaded', () => {
+  // ---- Демо-виджет (модалка с iframe) ----
+  const modal = document.getElementById('demo-modal');
+  const body = document.querySelector('.modal-body');
 
-/* --- Quiz --- */
-const QUIZ_TYPES = ["perfectionist","anxious","overloader","thrill"];
-const quizRoot = document.getElementById("quiz-root");
-let answers = [], step = 0;
-
-function initQuiz(){ renderQuiz(); }
-
-function renderQuiz(){
-  if(!quizRoot || !T.quiz) return;
-  if(step >= 3){ showResult(); return; }
-  const i = step + 1;
-  const opts = T.quiz["q"+i+"_opts"];
-  quizRoot.innerHTML =
-    `<p class="q">${T.quiz["q"+i]}</p><div class="opts">` +
-    opts.map((o,idx)=>`<button class="opt" data-type="${QUIZ_TYPES[idx]}">${o}</button>`).join("") +
-    `</div><p class="note" style="margin-top:10px">${step+1} / 3</p>`;
-  quizRoot.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{
-    answers.push(b.dataset.type); step++; renderQuiz();
-  }));
-}
-
-function showResult(){
-  const counts = {};
-  answers.forEach(a=>counts[a]=(counts[a]||0)+1);
-  const top = QUIZ_TYPES.reduce((a,b)=>(counts[b]||0)>(counts[a]||0)?b:a);
-  const r = T.quiz.results[top];
-  quizRoot.innerHTML = `
-    <div class="result">
-      <h3>${T.quiz.result_title}: ${r.name}</h3>
-      <p>${r.text}</p>
-      <p>${r.cta}</p>
-      <button class="btn primary" onclick="document.getElementById('demo-badge').click()">${T.nav.try_demo}</button>
-      <button class="btn ghost" onclick="step=0;answers=[];renderQuiz()">${T.quiz.restart}</button>
-    </div>`;
-}
-
-/* --- Demo widget --- */
-const badge = document.getElementById("demo-badge");
-const modal = document.getElementById("demo-modal");
-const frame = document.getElementById("demo-frame");
-if(badge){
-  badge.addEventListener("click",()=>{
-    if(frame && CONFIG.demoUrl){ frame.src = CONFIG.demoUrl; }
-    modal.classList.add("open");
-    if(frame && !CONFIG.demoUrl){
-      frame.srcdoc = "<body style='font-family:sans-serif;background:#0f1220;color:#9aa3c0;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:20px'><div>DEMO_URL не задан.<br>Откройте js/config-раздел в коде страницы и вставьте URL веб-версии CutTails.</div></body>";
+  function openModal() {
+    let iframe = body.querySelector('iframe');
+    if (CONFIG.demoUrl) {
+      if (!iframe) {
+        const ph = body.querySelector('.modal-placeholder');
+        if (ph) ph.remove();
+        iframe = document.createElement('iframe');
+        iframe.setAttribute('title', 'CutTails demo');
+        iframe.setAttribute('allow', 'clipboard-write');
+        body.appendChild(iframe);
+      }
+      iframe.src = CONFIG.demoUrl;
+    } else if (iframe) {
+      iframe.remove();
     }
-  });
-  document.getElementById("demo-close").addEventListener("click",()=>modal.classList.remove("open"));
-  modal.addEventListener("click",e=>{ if(e.target===modal) modal.classList.remove("open"); });
-}
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+    const iframe = body.querySelector('iframe');
+    if (iframe) iframe.src = 'about:blank';
+  }
+  document.querySelectorAll('[data-open-demo]').forEach(b => b.addEventListener('click', openModal));
+  modal.querySelector('.modal-close').addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // ---- Тест «Какой вы прокрастинатор?» ----
+  const quizRoot = document.getElementById('quiz');
+  if (quizRoot && window.TEST_DATA) {
+    const D = window.TEST_DATA;
+    const answers = {};
+    let step = 0;
+
+    function render() {
+      const q = D.questions[step];
+      if (q) {
+        quizRoot.innerHTML =
+          '<div class="quiz-progress">' + D.progress.replace('{n}', step + 1).replace('{t}', D.questions.length) + '</div>' +
+          '<h3>' + q.title + '</h3>' +
+          q.options.map((o, i) =>
+            '<button class="opt" data-type="' + o.type + '" data-i="' + i + '">' + o.text + '</button>'
+          ).join('');
+        quizRoot.querySelectorAll('.opt').forEach(btn =>
+          btn.addEventListener('click', () => {
+            quizRoot.querySelectorAll('.opt').forEach(b => b.classList.remove('chosen'));
+            btn.classList.add('chosen');
+            answers[q.id] = btn.dataset.type;
+            setTimeout(() => { step++; render(); }, 250);
+          })
+        );
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      const counts = {};
+      Object.values(answers).forEach(t => counts[t] = (counts[t] || 0) + 1);
+      const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+      const r = D.results[top];
+      quizRoot.innerHTML =
+        '<div class="result">' +
+        '<span class="tag">' + r.tag + '</span>' +
+        '<h3>' + r.title + '</h3>' +
+        '<p>' + r.text + '</p>' +
+        '<div class="tip">' + r.tip + '</div>' +
+        '<div class="cta-row" style="margin-top:20px">' +
+        '<button class="btn primary" data-open-demo>' + r.cta + '</button>' +
+        '</div></div>';
+      const demoBtn = quizRoot.querySelector('[data-open-demo]');
+      if (demoBtn && CONFIG.demoUrl) {
+        demoBtn.addEventListener('click', () => {
+          // глубокая ссылка: передаём тип пользователя в демо CutTails
+          try {
+            const u = new URL(CONFIG.demoUrl);
+            u.searchParams.set('type', top);
+            u.searchParams.set('source', 'site-quiz');
+            CONFIG.demoUrl = u.toString();
+          } catch (e) {}
+          openModal();
+        });
+      }
+    }
+
+    render();
+  }
+
+  // ---- Год в футере ----
+  document.querySelectorAll('[data-year]').forEach(el => el.textContent = new Date().getFullYear());
+});
