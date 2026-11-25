@@ -2,24 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Anti-Procrastinator</title>
-<meta name="robots" content="index, follow">
-<link rel="alternate" hreflang="en" href="https://anti-procrastinator.com/en/" >
-<link rel="alternate" hreflang="ru" href="https://anti-procrastinator.com/ru/" >
-<link rel="alternate" hreflang="x-default" href="https://anti-procrastinator.com/en/" >
-<script>
-(function() {
-  var lang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-  var target = lang.indexOf('ru') === 0 ? '/ru/' : '/en/';
-  window.location.replace(target);
-})();
-</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anti-Procrastinator — redirecting</title>
+<link rel="alternate" hreflang="en" href="https://anti-procrastinator.com/en/">
+<link rel="alternate" hreflang="ru" href="https://anti-procrastinator.com/ru/">
+<noscript><p><a href="/en/">English</a> · <a href="/ru/">Русский</a></p></noscript>
 </head>
 <body>
-<noscript>
-  <p><a href="/en/">English</a> · <a href="/ru/">Русский</a></p>
-</noscript>
-<p>Redirecting… / Перенаправление…</p>
+<p><a href="/en/">English</a> · <a href="/ru/">Русский</a></p>
+<script>
+(function(){
+  var lang = (navigator.language || navigator.userLanguage || 'en').slice(0,2).toLowerCase();
+  location.replace(lang === 'ru' ? '/ru/' : '/en/');
+})();
+</script>
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
     (function(m,e,t,r,i,k,a){
