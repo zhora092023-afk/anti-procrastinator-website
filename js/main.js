@@ -1,105 +1,59 @@
-/* Anti-Procrastinator — interactions */
 const CONFIG = {
-  // Вставьте сюда URL вашей PWA (CutTails), например:
-  // demoUrl: 'https://app.anti-procrastinator.com'
-  demoUrl: ''
+  demoUrl: '', // <-- вставьте URL вашей PWA, например 'https://app.anti-procrastinator.com'
+  quizSource: 'site-quiz'
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-  // ---- Демо-виджет (модалка с iframe) ----
+const TYPE_PARAMS = { a: 'overloaded', b: 'perfectionist', c: 'avoider', d: 'thrill-seeker' };
+
+function openDemo() {
   const modal = document.getElementById('demo-modal');
-  const body = document.querySelector('.modal-body');
-
-  function openModal() {
-    let iframe = body.querySelector('iframe');
-    if (CONFIG.demoUrl) {
-      if (!iframe) {
-        const ph = body.querySelector('.modal-placeholder');
-        if (ph) ph.remove();
-        iframe = document.createElement('iframe');
-        iframe.setAttribute('title', 'CutTails demo');
-        iframe.setAttribute('allow', 'clipboard-write');
-        body.appendChild(iframe);
-      }
-      iframe.src = CONFIG.demoUrl;
-    } else if (iframe) {
-      iframe.remove();
+  const wrap = document.getElementById('demo-frame-wrap');
+  const note = document.getElementById('demo-note');
+  modal.classList.remove('hidden');
+  if (CONFIG.demoUrl) {
+    if (!wrap.dataset.loaded) {
+      wrap.innerHTML = '<iframe src="' + CONFIG.demoUrl + '" title="CutTails demo" allow="clipboard-write"></iframe>';
+      wrap.dataset.loaded = '1';
     }
-    modal.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    if (note) note.style.display = 'none';
   }
-  function closeModal() {
-    modal.classList.remove('open');
-    document.body.style.overflow = '';
-    const iframe = body.querySelector('iframe');
-    if (iframe) iframe.src = 'about:blank';
-  }
-  document.querySelectorAll('[data-open-demo]').forEach(b => b.addEventListener('click', openModal));
-  modal.querySelector('.modal-close').addEventListener('click', closeModal);
-  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+}
+function closeDemo() {
+  document.getElementById('demo-modal').classList.add('hidden');
+}
 
-  // ---- Тест «Какой вы прокрастинатор?» ----
-  const quizRoot = document.getElementById('quiz');
-  if (quizRoot && window.TEST_DATA) {
-    const D = window.TEST_DATA;
-    const answers = {};
-    let step = 0;
-
-    function render() {
-      const q = D.questions[step];
-      if (q) {
-        quizRoot.innerHTML =
-          '<div class="quiz-progress">' + D.progress.replace('{n}', step + 1).replace('{t}', D.questions.length) + '</div>' +
-          '<h3>' + q.title + '</h3>' +
-          q.options.map((o, i) =>
-            '<button class="opt" data-type="' + o.type + '" data-i="' + i + '">' + o.text + '</button>'
-          ).join('');
-        quizRoot.querySelectorAll('.opt').forEach(btn =>
-          btn.addEventListener('click', () => {
-            quizRoot.querySelectorAll('.opt').forEach(b => b.classList.remove('chosen'));
-            btn.classList.add('chosen');
-            answers[q.id] = btn.dataset.type;
-            setTimeout(() => { step++; render(); }, 250);
-          })
-        );
-      } else {
-        showResult();
-      }
+const TEXT = SITE_LANG === 'ru'
+  ? {
+      overloaded: {t:'Вы — «Перегруженный»',d:'У вас много начатого и мало завершённого. Механизм — перегрузка выбора. Первое действие: выберите ОДНУ задачу и разбейте её на шаг по 2 минуты.',cta:'Разобрать одну задачу с ИИ-компаньоном'},
+      perfectionist: {t:'Вы — «Перфекционист»',d:'Вы откладываете, чтобы защитить самооценку. Первое действие: сделайте намеренно «плохой» черновик за 10 минут — это снимет планку.',cta:'Попробовать режим «черновик без страха»'},
+      avoider: {t:'Вы — «Тревожный избегатель»',d:'Вы избегаете того, что вызывает тревогу. Первое действие: подойдите к пугающей задаче на 5 минут — не решить, а только «коснуться».',cta:'Поговорить с ИИ-компаньоном об избегании'},
+      'thrill-seeker': {t:'Вы — «Искатель азарта»',d:'Дедлайн — ваш стартовый пистолет. Первое действие: назначьте себе искусственный мини-дедлайн раньше настоящего и награду за его выполнение.',cta:'Настроить мини-дедлайн в демо'}
     }
+  : {
+      overloaded: {t:'You are the Overloaded',d:'Lots started, little finished. Mechanism: choice overload. First action: pick ONE task and break it into a 2-minute step.',cta:'Break down one task with the AI companion'},
+      perfectionist: {t:'You are the Perfectionist',d:'You delay to protect self-esteem. First action: make a deliberately bad 10-minute draft — it lowers the bar.',cta:'Try the "fearless draft" mode'},
+      avoider: {t:'You are the Anxious Avoider',d:'You avoid whatever triggers anxiety. First action: approach the scary task for 5 minutes — touch it, do not solve it.',cta:'Talk to the AI companion about avoidance'},
+      'thrill-seeker': {t:'You are the Thrill-Seeker',d:'Deadlines are your starting gun. First action: set yourself an artificial mini-deadline earlier than the real one, with a reward.',cta:'Set a mini-deadline in the demo'}
+    };
 
-    function showResult() {
-      const counts = {};
-      Object.values(answers).forEach(t => counts[t] = (counts[t] || 0) + 1);
-      const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
-      const r = D.results[top];
-      quizRoot.innerHTML =
-        '<div class="result">' +
-        '<span class="tag">' + r.tag + '</span>' +
-        '<h3>' + r.title + '</h3>' +
-        '<p>' + r.text + '</p>' +
-        '<div class="tip">' + r.tip + '</div>' +
-        '<div class="cta-row" style="margin-top:20px">' +
-        '<button class="btn primary" data-open-demo>' + r.cta + '</button>' +
-        '</div></div>';
-      const demoBtn = quizRoot.querySelector('[data-open-demo]');
-      if (demoBtn && CONFIG.demoUrl) {
-        demoBtn.addEventListener('click', () => {
-          // глубокая ссылка: передаём тип пользователя в демо CutTails
-          try {
-            const u = new URL(CONFIG.demoUrl);
-            u.searchParams.set('type', top);
-            u.searchParams.set('source', 'site-quiz');
-            CONFIG.demoUrl = u.toString();
-          } catch (e) {}
-          openModal();
-        });
-      }
-    }
-
-    render();
+function showResult() {
+  const counts = {};
+  for (const name of ['q1','q2','q3']) {
+    const el = document.querySelector('input[name="' + name + '"]:checked');
+    if (!el) { alert(SITE_LANG === 'ru' ? 'Ответьте на все вопросы' : 'Please answer all questions'); return; }
+    counts[el.value] = (counts[el.value] || 0) + 1;
   }
+  const type = Object.entries(counts).sort((x, y) => y[1] - x[1])[0][0];
+  const info = TEXT[TYPE_PARAMS[type]];
+  const box = document.getElementById('quiz-result');
+  box.style.display = 'block';
+  box.innerHTML = '<h3>' + info.t + '</h3><p>' + info.d + '</p><button class="btn primary" onclick="goToDemo(\'' + TYPE_PARAMS[type] + '\')">' + info.cta + '</button>';
+}
 
-  // ---- Год в футере ----
-  document.querySelectorAll('[data-year]').forEach(el => el.textContent = new Date().getFullYear());
-});
+function goToDemo(type) {
+  if (CONFIG.demoUrl) {
+    window.open(CONFIG.demoUrl + '?type=' + type + '&source=' + CONFIG.quizSource, '_blank');
+  } else {
+    openDemo();
+  }
+}
